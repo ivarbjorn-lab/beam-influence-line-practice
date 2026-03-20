@@ -3,25 +3,30 @@ class BeamInfluenceLineApp {
         this.canvas = document.getElementById('beamCanvas');
         this.ctx = this.canvas.getContext('2d');
         
+        // Set canvas size
         this.canvas.width = 800;
         this.canvas.height = 600;
         
+        // Beam properties
         this.spans = 0;
         this.supports = [];
         this.xSupport = [];
         this.labels = ['A', 'B', 'C', 'D'];
         this.sectionForceType = ['reaction force', 'shear force', 'moment'];
         
+        // Check properties
         this.sctCheck = 0;
         this.sctFrcCheck = 0;
         this.vSide = 0;
         this.infI = [];
         this.infPlot = false;
         
-        this.scale = 300;
+        // Drawing parameters
+        this.scale = 300; // pixels per unit
         this.offsetX = this.canvas.width / 2;
         this.offsetY = this.canvas.height / 2;
         
+        // Bind buttons
         document.getElementById('goButton').addEventListener('click', () => this.goButtonPushed());
         document.getElementById('solutionButton').addEventListener('click', () => this.solutionButtonPushed());
         document.getElementById('resetButton').addEventListener('click', () => this.resetButtonPushed());
@@ -37,8 +42,9 @@ class BeamInfluenceLineApp {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
     
+    // Random generation methods
     randomSpans() {
-        this.spans = Math.floor(Math.random() * 3) + 1;
+        this.spans = Math.floor(Math.random() * 3) + 1; // 1-3 spans
         this.xSupport = [];
         for (let i = 0; i <= this.spans; i++) {
             this.xSupport.push(-1 + (2 / this.spans) * i);
@@ -49,17 +55,18 @@ class BeamInfluenceLineApp {
         let check = false;
         while (!check) {
             const stype = new Array(this.spans + 1).fill(0);
-            stype[0] = Math.floor(Math.random() * 3) + 1;
+            stype[0] = Math.floor(Math.random() * 3) + 1; // 1-3
             stype[stype.length - 1] = Math.floor(Math.random() * 3) + 1;
             
             if (this.spans > 1) {
                 for (let i = 1; i < stype.length - 1; i++) {
-                    stype[i] = Math.floor(Math.random() * 2) + 1;
+                    stype[i] = Math.floor(Math.random() * 2) + 1; // 1-2
                 }
             }
             
             this.supports = stype;
             
+            // Check validity
             const hasFixed = stype.includes(3);
             const triangCount = stype.filter(s => s === 2).length;
             
@@ -77,31 +84,32 @@ class BeamInfluenceLineApp {
             this.sctCheck = Math.floor(Math.random() * (this.spans + 1));
             const support = this.supports[this.sctCheck];
             
-            if (support === 1) {
+            if (support === 1) { // free support
                 if (this.sctCheck === 0 || this.sctCheck === this.spans) {
                     check = false;
                 } else {
-                    this.sctFrcCheck = Math.floor(Math.random() * 2) + 1;
+                    this.sctFrcCheck = Math.floor(Math.random() * 2) + 1; // 1-2 (shear or moment)
                     check = true;
                 }
-            } else if (support === 2) {
+            } else if (support === 2) { // triangular
                 if (this.sctCheck === 0 || this.sctCheck === this.spans) {
-                    this.sctFrcCheck = 0;
+                    this.sctFrcCheck = 0; // reaction
                     check = true;
                 } else {
-                    this.sctFrcCheck = Math.floor(Math.random() * 3);
-                    if (this.sctFrcCheck === 1) {
-                        this.vSide = Math.floor(Math.random() * 2);
+                    this.sctFrcCheck = Math.floor(Math.random() * 3); // 0-2
+                    if (this.sctFrcCheck === 1) { // shear
+                        this.vSide = Math.floor(Math.random() * 2); // 0-1
                     }
                     check = true;
                 }
-            } else {
+            } else { // fixed
                 this.sctFrcCheck = Math.floor(Math.random() * 3);
                 check = true;
             }
         }
     }
     
+    // Drawing methods
     toCanvasX(x) {
         return this.offsetX + x * this.scale;
     }
@@ -115,6 +123,7 @@ class BeamInfluenceLineApp {
         
         const sf = showInfluence ? this.getScaleFactor() : 1;
         
+        // Draw beam outline
         this.ctx.strokeStyle = 'black';
         this.ctx.lineWidth = 2;
         this.ctx.beginPath();
@@ -126,10 +135,12 @@ class BeamInfluenceLineApp {
         );
         this.ctx.stroke();
         
+        // Draw supports
         for (let i = 0; i < this.supports.length; i++) {
             this.drawSupport(i, sf);
         }
         
+        // Draw labels
         this.ctx.fillStyle = 'black';
         this.ctx.font = '16px Arial';
         this.ctx.textAlign = 'center';
@@ -141,6 +152,7 @@ class BeamInfluenceLineApp {
             );
         }
         
+        // Draw influence line if needed
         if (showInfluence && this.infI.length > 0) {
             this.drawInfluenceLine();
         }
@@ -154,14 +166,14 @@ class BeamInfluenceLineApp {
         this.ctx.fillStyle = 'black';
         this.ctx.lineWidth = 2;
         
-        if (support === 2) {
+        if (support === 2) { // triangular
             this.ctx.beginPath();
             this.ctx.moveTo(this.toCanvasX(x), this.toCanvasY(-0.1 * sf));
             this.ctx.lineTo(this.toCanvasX(x + 0.025), this.toCanvasY(-0.2 * sf));
             this.ctx.lineTo(this.toCanvasX(x - 0.025), this.toCanvasY(-0.2 * sf));
             this.ctx.closePath();
             this.ctx.stroke();
-        } else if (support === 3) {
+        } else if (support === 3) { // fixed
             const dir = index === 0 ? 1 : -1;
             this.ctx.beginPath();
             this.ctx.moveTo(this.toCanvasX(x), this.toCanvasY(-0.1 * sf));
@@ -176,10 +188,11 @@ class BeamInfluenceLineApp {
     getScaleFactor() {
         if (this.infI.length === 0) return 1;
         const maxVal = Math.max(...this.infI.map(p => Math.abs(p.y)));
-        return Math.max(0.5, Math.ceil(maxVal * 10) / 10 / 2);
+        return Math.ceil(maxVal * 10) / 10 / 2;
     }
     
     drawInfluenceLine() {
+        // Draw zero line
         this.ctx.strokeStyle = 'blue';
         this.ctx.lineWidth = 1;
         this.ctx.setLineDash([5, 5]);
@@ -189,6 +202,7 @@ class BeamInfluenceLineApp {
         this.ctx.stroke();
         this.ctx.setLineDash([]);
         
+        // Draw influence line
         this.ctx.strokeStyle = 'red';
         this.ctx.lineWidth = 2;
         this.ctx.beginPath();
@@ -203,6 +217,7 @@ class BeamInfluenceLineApp {
         }
         this.ctx.stroke();
         
+        // Draw grid
         this.ctx.strokeStyle = '#ddd';
         this.ctx.lineWidth = 1;
         for (let i = 0; i < this.xSupport.length; i++) {
@@ -213,20 +228,6 @@ class BeamInfluenceLineApp {
         }
     }
     
+    // Calculation methods (simplified)
     calculateInfluenceLine() {
-        this.infI = [];
-        const numPoints = 100;
-        
-        const checkX = this.xSupport[this.sctCheck];
-        
-        // Simplified influence line calculation
-        for (let i = 0; i < numPoints; i++) {
-            const x = -1 + (2 * i) / (numPoints - 1);
-            let y = 0;
-            
-            if (this.sctFrcCheck === 0) { // Reaction force
-                if (this.spans === 1) {
-                    y = x <= checkX ? (x + 1) / 2 : (1 - x) / 2;
-                } else {
-                    const spanLength = 2 / this.spans;
-                    const relPos = (checkX + 1) /
+        // Simplified calculation - creates linear
