@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influence Line Beam Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="info-box">
+                <p>This application is intended to help you learn about influence lines. We recommend you first try to sketch the influence line and then compare with the solution</p>
+            </div>
+
+            <div class="panel">
+                <h3>Randomly generating a beam</h3>
+                <button id="goButton" class="btn-primary">GO!</button>
+            </div>
+
+            <div class="panel">
+                <h3>Influence line to check?</h3>
+                <div id="influenceText" class="text-display"></div>
+            </div>
+
+            <div class="panel">
+                <h3>Solution</h3>
+                <button id="solutionButton" class="btn-secondary" disabled>Solution</button>
+            </div>
+
+            <button id="resetButton" class="btn-reset" disabled>Reset</button>
+        </div>
+
+        <div class="right-panel">
+            <canvas id="beamCanvas"></canvas>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
